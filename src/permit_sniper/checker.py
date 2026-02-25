@@ -124,6 +124,7 @@ class PermitChecker:
         """Check a single river for availability changes."""
         permit_id = river["permit_id"]
         river_name = river["name"]
+        notify_after = river.get("notify_after")
 
         logger.info(f"Checking {river_name} (permit {permit_id})...")
 
@@ -147,6 +148,17 @@ class PermitChecker:
         # Compare against previous state
         previous = self.state.get_previous(permit_id)
         changes = self._detect_changes(river_name, permit_id, previous, current)
+
+        # Filter out dates before notify_after (e.g., Main Salmon is open until Jun 16)
+        if notify_after and changes:
+            before = len(changes)
+            changes = [c for c in changes if c.date >= notify_after]
+            skipped = before - len(changes)
+            if skipped:
+                logger.info(
+                    f"  Skipped {skipped} opening(s) before {notify_after} "
+                    f"(permits freely available until then)"
+                )
 
         # Update state
         self.state.update(permit_id, current)

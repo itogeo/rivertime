@@ -16,16 +16,19 @@ RIVER_PERMITS = {
         "permit_id": "234623",
         "name": "Middle Fork of the Salmon",
         "division_id": "377",
+        "notify_after": None,  # Alert for any date
     },
     "main_salmon": {
         "permit_id": "234622",
         "name": "Main Salmon River",
         "division_id": "376",
+        "notify_after": "2026-06-16",  # Open/available until Jun 16, only alert after
     },
     "selway": {
         "permit_id": "234624",
         "name": "Selway River",
         "division_id": "378",
+        "notify_after": None,  # Alert for any date
     },
 }
 
