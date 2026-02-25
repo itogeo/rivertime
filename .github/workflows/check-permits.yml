@@ -1,0 +1,51 @@
+name: Check River Permits
+
+on:
+  schedule:
+    # Run every 10 minutes during waking hours (6 AM - 11 PM Mountain Time = 1 PM - 6 AM UTC)
+    # Recreation.gov releases at 8 AM MT (3 PM UTC) so we cover that window
+    - cron: "*/10 * * * *"
+  workflow_dispatch: # Allow manual trigger from GitHub UI
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: "pip"
+
+      - name: Install dependencies
+        run: pip install -e .
+
+      - name: Download previous state
+        uses: actions/cache@v4
+        with:
+          path: data/state.json
+          key: permit-state-${{ github.run_id }}
+          restore-keys: |
+            permit-state-
+
+      - name: Check permits
+        env:
+          TWILIO_ACCOUNT_SID: ${{ secrets.TWILIO_ACCOUNT_SID }}
+          TWILIO_AUTH_TOKEN: ${{ secrets.TWILIO_AUTH_TOKEN }}
+          TWILIO_FROM_NUMBER: ${{ secrets.TWILIO_FROM_NUMBER }}
+          TWILIO_TO_NUMBERS: ${{ secrets.TWILIO_TO_NUMBERS }}
+          SMTP_HOST: ${{ secrets.SMTP_HOST }}
+          SMTP_PORT: ${{ secrets.SMTP_PORT }}
+          SMTP_USERNAME: ${{ secrets.SMTP_USERNAME }}
+          SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
+          EMAIL_FROM: ${{ secrets.EMAIL_FROM }}
+          EMAIL_TO: ${{ secrets.EMAIL_TO }}
+          RIVERS: "middle_fork,main_salmon,selway"
+          JITTER_MAX_SECONDS: "5"
+          CHECK_INTERVAL_MINUTES: "10"
+          STATE_DB_PATH: "data/state.json"
+          LOG_LEVEL: "INFO"
+        run: permit-sniper check
