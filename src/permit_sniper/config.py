@@ -75,7 +75,9 @@ class Settings(BaseSettings):
 
     @field_validator("twilio_to_numbers", "email_to", "rivers", mode="before")
     @classmethod
-    def split_comma_list(cls, v: Union[str, List[str]]) -> List[str]:
+    def split_comma_list(cls, v: Union[str, List[str], None]) -> List[str]:
+        if v is None or v == "":
+            return []
         if isinstance(v, str):
             return [x.strip() for x in v.split(",") if x.strip()]
         return v

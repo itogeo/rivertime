@@ -2,10 +2,8 @@ name: Check River Permits
 
 on:
   schedule:
-    # Run every 10 minutes during waking hours (6 AM - 11 PM Mountain Time = 1 PM - 6 AM UTC)
-    # Recreation.gov releases at 8 AM MT (3 PM UTC) so we cover that window
     - cron: "*/10 * * * *"
-  workflow_dispatch: # Allow manual trigger from GitHub UI
+  workflow_dispatch:
 
 jobs:
   check:
@@ -33,10 +31,6 @@ jobs:
 
       - name: Check permits
         env:
-          TWILIO_ACCOUNT_SID: ${{ secrets.TWILIO_ACCOUNT_SID }}
-          TWILIO_AUTH_TOKEN: ${{ secrets.TWILIO_AUTH_TOKEN }}
-          TWILIO_FROM_NUMBER: ${{ secrets.TWILIO_FROM_NUMBER }}
-          TWILIO_TO_NUMBERS: ${{ secrets.TWILIO_TO_NUMBERS }}
           SMTP_HOST: ${{ secrets.SMTP_HOST }}
           SMTP_PORT: ${{ secrets.SMTP_PORT }}
           SMTP_USERNAME: ${{ secrets.SMTP_USERNAME }}
@@ -45,7 +39,6 @@ jobs:
           EMAIL_TO: ${{ secrets.EMAIL_TO }}
           RIVERS: "middle_fork,main_salmon,selway"
           JITTER_MAX_SECONDS: "5"
-          CHECK_INTERVAL_MINUTES: "10"
           STATE_DB_PATH: "data/state.json"
           LOG_LEVEL: "INFO"
         run: permit-sniper check
