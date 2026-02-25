@@ -11,26 +11,36 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # Recreation.gov permit IDs for the Four Rivers system
+# Dates before notify_after are ignored (permits freely available or lottery-held)
+# Dates after season_end are ignored
 RIVER_PERMITS = {
     "middle_fork": {
         "permit_id": "234623",
         "name": "Middle Fork of the Salmon",
         "division_id": "377",
-        "notify_after": None,
+        "notify_after": "2026-05-13",
+        "season_end": "2026-09-03",
     },
     "main_salmon": {
         "permit_id": "234622",
         "name": "Main Salmon River",
         "division_id": "376",
-        "notify_after": "2026-06-16",
+        "notify_after": "2026-06-20",
+        "season_end": "2026-09-07",
     },
     "selway": {
         "permit_id": "234624",
         "name": "Selway River",
         "division_id": "378",
-        "notify_after": None,
+        "notify_after": "2026-05-15",
+        "season_end": "2026-07-31",
     },
 }
+
+# Don't send any alerts before this date - lottery-held dates show as
+# "available" in the API but can't actually be booked until after
+# unconfirmed lottery awards are released on March 16.
+GLOBAL_NOTIFY_AFTER = "2026-03-16"
 
 
 def _env(key: str, default: str = "") -> str:

@@ -9,7 +9,7 @@ from pathlib import Path
 from typing import Any
 
 from .api import RecGovClient, parse_availability
-from .config import Settings
+from .config import Settings, GLOBAL_NOTIFY_AFTER
 
 logger = logging.getLogger(__name__)
 
@@ -149,16 +149,25 @@ class PermitChecker:
         previous = self.state.get_previous(permit_id)
         changes = self._detect_changes(river_name, permit_id, previous, current)
 
-        # Filter out dates before notify_after (e.g., Main Salmon is open until Jun 16)
-        if notify_after and changes:
-            before = len(changes)
-            changes = [c for c in changes if c.date >= notify_after]
-            skipped = before - len(changes)
-            if skipped:
-                logger.info(
-                    f"  Skipped {skipped} opening(s) before {notify_after} "
-                    f"(permits freely available until then)"
-                )
+        # Filter out dates outside the alertable window
+        season_end = river.get("season_end")
+        before_count = len(changes)
+        filtered = []
+        for c in changes:
+            # Skip dates before global cutoff (lottery dates not yet released)
+            if c.date < GLOBAL_NOTIFY_AFTER:
+                continue
+            # Skip dates before per-river notify_after
+            if notify_after and c.date < notify_after:
+                continue
+            # Skip dates after per-river season end
+            if season_end and c.date > season_end:
+                continue
+            filtered.append(c)
+        skipped = before_count - len(filtered)
+        if skipped:
+            logger.info(f"  Filtered out {skipped} date(s) outside alertable window")
+        changes = filtered
 
         # Update state
         self.state.update(permit_id, current)
