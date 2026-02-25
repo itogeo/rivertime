@@ -137,7 +137,7 @@ class SMSNotifier:
         client = self._get_client()
         success = True
 
-        for to_number in self.settings.twilio_to_numbers:
+        for to_number in self.settings.twilio_to_list:
             try:
                 msg = client.messages.create(
                     body=message_body,
@@ -176,7 +176,7 @@ class EmailNotifier:
         msg = MIMEMultipart("alternative")
         msg["Subject"] = subject
         msg["From"] = self.settings.email_from or self.settings.smtp_username
-        msg["To"] = ", ".join(self.settings.email_to)
+        msg["To"] = ", ".join(self.settings.email_to_list)
 
         msg.attach(MIMEText(text_body, "plain"))
         msg.attach(MIMEText(html_body, "html"))
@@ -189,10 +189,10 @@ class EmailNotifier:
                 server.login(self.settings.smtp_username, self.settings.smtp_password)
                 server.sendmail(
                     msg["From"],
-                    self.settings.email_to,
+                    self.settings.email_to_list,
                     msg.as_string(),
                 )
-            logger.info(f"Email sent to {', '.join(self.settings.email_to)}")
+            logger.info(f"Email sent to {', '.join(self.settings.email_to_list)}")
             return True
         except Exception as e:
             logger.error(f"Failed to send email: {e}")

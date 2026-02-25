@@ -151,12 +151,12 @@ def run_monitor(settings: Settings):
     console.print(f"[cyan]Check interval:[/cyan] Every {settings.check_interval_minutes} minutes")
 
     if settings.sms_enabled:
-        console.print(f"[cyan]SMS:[/cyan] Enabled ({len(settings.twilio_to_numbers)} recipients)")
+        console.print(f"[cyan]SMS:[/cyan] Enabled ({len(settings.twilio_to_list)} recipients)")
     else:
         console.print("[yellow]SMS:[/yellow] Disabled (configure Twilio in .env)")
 
     if settings.email_enabled:
-        console.print(f"[cyan]Email:[/cyan] Enabled ({len(settings.email_to)} recipients)")
+        console.print(f"[cyan]Email:[/cyan] Enabled ({len(settings.email_to_list)} recipients)")
     else:
         console.print("[yellow]Email:[/yellow] Disabled (configure SMTP in .env)")
 

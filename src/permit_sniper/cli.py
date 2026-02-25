@@ -59,7 +59,7 @@ def main():
     settings = Settings()
 
     if args.rivers:
-        settings.rivers = [r.strip() for r in args.rivers.split(",")]
+        settings.rivers = args.rivers
     if args.interval:
         settings.check_interval_minutes = args.interval
     if args.start_date:
