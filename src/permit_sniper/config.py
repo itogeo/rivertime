@@ -37,10 +37,11 @@ RIVER_PERMITS = {
     },
 }
 
-# Don't send any alerts before this date - lottery-held dates show as
-# "available" in the API but can't actually be booked until after
-# unconfirmed lottery awards are released on March 16.
-GLOBAL_NOTIFY_AFTER = "2026-03-16"
+# Start alerting March 13 - a few days early so you can spot which
+# lottery winners are likely to forfeit before the March 16 release.
+# Dates showing "available" before Mar 16 can't be booked yet but
+# give you a heads up on what's about to drop.
+GLOBAL_NOTIFY_AFTER = "2026-03-13"
 
 
 def _env(key: str, default: str = "") -> str:
