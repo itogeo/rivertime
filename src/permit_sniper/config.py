@@ -82,6 +82,11 @@ class Settings:
         self.date_start = _env("DATE_START")
         self.date_end = _env("DATE_END")
 
+        # Auto-booking (Playwright)
+        self.auto_book = _env("AUTO_BOOK", "").lower() in ("1", "true", "yes")
+        self.rec_gov_username = _env("REC_GOV_USERNAME")
+        self.rec_gov_password = _env("REC_GOV_PASSWORD")
+
         # Advanced
         self.jitter_max_seconds = _env_int("JITTER_MAX_SECONDS", 30)
         self.state_db_path = _env("STATE_DB_PATH", "data/state.json")
@@ -90,6 +95,10 @@ class Settings:
     @property
     def river_list(self) -> list:
         return [x.strip() for x in self.rivers.split(",") if x.strip()]
+
+    @property
+    def auto_book_enabled(self) -> bool:
+        return self.auto_book and bool(self.rec_gov_username and self.rec_gov_password)
 
     @property
     def sms_enabled(self) -> bool:

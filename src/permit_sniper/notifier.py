@@ -43,16 +43,35 @@ def format_alert_text(changes: list[AvailabilityChange]) -> str:
     return "\n".join(lines)
 
 
-def format_alert_html(changes: list[AvailabilityChange]) -> str:
-    """Format changes into an HTML email body."""
+def format_alert_html(changes: list[AvailabilityChange], booking_results: dict = None) -> str:
+    """Format changes into an HTML email body. booking_results maps date -> BookingResult."""
     if not changes:
         return ""
 
+    booking_results = booking_results or {}
+    any_in_cart = any(r.success for r in booking_results.values())
+
+    header_color = "#cc0000" if any_in_cart else "#2d7d46"
+    header_text = (
+        "🚨 PERMIT IN YOUR CART — COMPLETE CHECKOUT NOW!"
+        if any_in_cart
+        else "Permit Alert - New Openings Detected!"
+    )
+
     html_parts = [
         "<html><body>",
-        "<h2 style='color: #2d7d46;'>Permit Alert - New Openings Detected!</h2>",
+        f"<h2 style='color: {header_color};'>{header_text}</h2>",
         f"<p style='color: #666;'>Detected at: {datetime.now().strftime('%Y-%m-%d %H:%M:%S MT')}</p>",
     ]
+
+    if any_in_cart:
+        html_parts.append(
+            "<div style='background: #fff3cd; border: 2px solid #cc0000; padding: 15px; "
+            "border-radius: 5px; margin: 10px 0;'>"
+            "<strong style='color: #cc0000;'>The bot added a permit to your cart. "
+            "You have ~15 minutes to complete checkout before it expires!</strong>"
+            "</div>"
+        )
 
     by_river: dict[str, list[AvailabilityChange]] = {}
     for change in changes:
@@ -64,26 +83,50 @@ def format_alert_html(changes: list[AvailabilityChange]) -> str:
         html_parts.append(
             "<tr style='background: #f0f0f0;'>"
             "<th style='padding: 8px; text-align: left;'>Date</th>"
-            "<th style='padding: 8px; text-align: left;'>Spots Available</th>"
+            "<th style='padding: 8px; text-align: left;'>Spots</th>"
+            "<th style='padding: 8px; text-align: left;'>Bot Status</th>"
             "</tr>"
         )
         for c in river_changes:
             date_obj = datetime.strptime(c.date, "%Y-%m-%d")
             date_fmt = date_obj.strftime("%A, %B %d, %Y")
+            result = booking_results.get(c.date)
+            if result:
+                if result.success:
+                    bot_status = "<span style='color: #cc0000; font-weight: bold;'>IN CART ✓</span>"
+                else:
+                    bot_status = f"<span style='color: #999;'>Not booked: {result.message[:60]}</span>"
+            else:
+                bot_status = "<span style='color: #999;'>—</span>"
             html_parts.append(
                 f"<tr>"
                 f"<td style='padding: 8px; border-bottom: 1px solid #ddd;'>{date_fmt}</td>"
                 f"<td style='padding: 8px; border-bottom: 1px solid #ddd; "
-                f"color: #2d7d46; font-weight: bold;'>{c.remaining} spot(s)</td>"
+                f"color: #2d7d46; font-weight: bold;'>{c.remaining}</td>"
+                f"<td style='padding: 8px; border-bottom: 1px solid #ddd;'>{bot_status}</td>"
                 f"</tr>"
             )
         html_parts.append("</table>")
-        url = river_changes[0].booking_url
-        html_parts.append(
-            f"<p><a href='{url}' style='display: inline-block; padding: 10px 20px; "
-            f"background: #2d7d46; color: white; text-decoration: none; "
-            f"border-radius: 5px; margin-top: 10px;'>Book Now on Recreation.gov</a></p>"
-        )
+
+        # If something is in cart, show checkout URL prominently
+        for c in river_changes:
+            result = booking_results.get(c.date)
+            if result and result.success and result.checkout_url:
+                html_parts.append(
+                    f"<p><a href='{result.checkout_url}' "
+                    f"style='display: inline-block; padding: 14px 28px; "
+                    f"background: #cc0000; color: white; text-decoration: none; "
+                    f"border-radius: 5px; margin-top: 10px; font-size: 16px; font-weight: bold;'>"
+                    f"Complete Checkout NOW →</a></p>"
+                )
+                break
+        else:
+            url = river_changes[0].booking_url
+            html_parts.append(
+                f"<p><a href='{url}' style='display: inline-block; padding: 10px 20px; "
+                f"background: #2d7d46; color: white; text-decoration: none; "
+                f"border-radius: 5px; margin-top: 10px;'>Book Now on Recreation.gov</a></p>"
+            )
 
     html_parts.append(
         "<p style='color: #cc0000; font-weight: bold;'>"
@@ -158,20 +201,26 @@ class EmailNotifier:
     def __init__(self, settings: Settings):
         self.settings = settings
 
-    def send(self, changes: list[AvailabilityChange]) -> bool:
+    def send(self, changes: list[AvailabilityChange], booking_results: dict = None) -> bool:
         """Send email notifications for availability changes."""
         if not self.settings.email_enabled:
             logger.debug("Email notifications disabled (no SMTP credentials)")
             return False
 
+        booking_results = booking_results or {}
         text_body = format_alert_text(changes)
-        html_body = format_alert_html(changes)
+        html_body = format_alert_html(changes, booking_results=booking_results)
         if not text_body:
             return False
 
         count = len(changes)
         rivers = set(c.river_name for c in changes)
-        subject = f"Permit Alert: {count} new opening(s) on {', '.join(rivers)}"
+        any_in_cart = any(r.success for r in booking_results.values())
+        subject = (
+            f"🚨 PERMIT IN CART — Complete Checkout NOW: {', '.join(rivers)}"
+            if any_in_cart
+            else f"Permit Alert: {count} new opening(s) on {', '.join(rivers)}"
+        )
 
         msg = MIMEMultipart("alternative")
         msg["Subject"] = subject
@@ -207,7 +256,7 @@ class Notifier:
         self.email = EmailNotifier(settings)
         self.settings = settings
 
-    def notify(self, changes: list[AvailabilityChange]) -> bool:
+    def notify(self, changes: list[AvailabilityChange], booking_results: dict = None) -> bool:
         """Send notifications through all enabled channels."""
         if not changes:
             return False
@@ -218,9 +267,10 @@ class Notifier:
             return False
 
         logger.info(f"Sending notifications for {len(new_openings)} new opening(s)...")
+        booking_results = booking_results or {}
 
         sms_ok = self.sms.send(new_openings)
-        email_ok = self.email.send(new_openings)
+        email_ok = self.email.send(new_openings, booking_results=booking_results)
 
         if not sms_ok and not email_ok:
             if not self.settings.sms_enabled and not self.settings.email_enabled:

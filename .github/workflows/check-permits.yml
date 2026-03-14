@@ -19,7 +19,7 @@ jobs:
           cache: "pip"
 
       - name: Install dependencies
-        run: pip install -e .
+        run: pip install -e . && playwright install chromium --with-deps
 
       - name: Download previous state
         uses: actions/cache@v4
@@ -41,4 +41,7 @@ jobs:
           JITTER_MAX_SECONDS: "5"
           STATE_DB_PATH: "data/state.json"
           LOG_LEVEL: "INFO"
+          AUTO_BOOK: ${{ secrets.AUTO_BOOK }}
+          REC_GOV_USERNAME: ${{ secrets.REC_GOV_USERNAME }}
+          REC_GOV_PASSWORD: ${{ secrets.REC_GOV_PASSWORD }}
         run: permit-sniper check
