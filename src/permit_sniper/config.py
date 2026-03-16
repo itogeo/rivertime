@@ -20,6 +20,9 @@ RIVER_PERMITS = {
         "division_id": "377",
         "notify_after": "2026-05-13",
         "season_end": "2026-09-03",
+        # Auto-book only within this window (None = don't auto-book)
+        "auto_book_start": "2026-06-10",
+        "auto_book_end": "2026-07-25",
     },
     "main_salmon": {
         "permit_id": "234622",
@@ -27,6 +30,9 @@ RIVER_PERMITS = {
         "division_id": "376",
         "notify_after": "2026-06-20",
         "season_end": "2026-09-07",
+        # No auto-booking — email only
+        "auto_book_start": None,
+        "auto_book_end": None,
     },
     "selway": {
         "permit_id": "234624",
@@ -34,6 +40,9 @@ RIVER_PERMITS = {
         "division_id": "378",
         "notify_after": "2026-05-15",
         "season_end": "2026-07-31",
+        # Auto-book any date through Jul 10
+        "auto_book_start": "2026-05-15",
+        "auto_book_end": "2026-07-10",
     },
 }
 

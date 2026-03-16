@@ -81,6 +81,19 @@ def print_availability_table(availability: dict[str, dict[str, dict]]):
         console.print()
 
 
+def _in_auto_book_window(opening: AvailabilityChange) -> bool:
+    """Check if this opening falls within the river's auto-book date window."""
+    from .config import RIVER_PERMITS
+    for cfg in RIVER_PERMITS.values():
+        if cfg["permit_id"] == opening.permit_id:
+            start = cfg.get("auto_book_start")
+            end = cfg.get("auto_book_end")
+            if not start or not end:
+                return False
+            return start <= opening.date <= end
+    return False
+
+
 def _attempt_auto_book(settings: Settings, opening: AvailabilityChange) -> str:
     """Try to add permit to cart via Playwright. Returns a status note for the email."""
     booker = PermitBooker(
@@ -113,25 +126,31 @@ def run_check(settings: Settings, checker: PermitChecker, notifier: Notifier):
                         f"({c.remaining} spots) - {c.booking_url}[/green]"
                     )
 
-                # Attempt auto-booking if enabled
+                # Attempt auto-booking if enabled and within target window
                 booking_results = {}
                 if settings.auto_book_enabled:
-                    console.print("[cyan]Auto-booking enabled — attempting to add to cart...[/cyan]")
                     for opening in new_openings:
-                        result = _attempt_auto_book(settings, opening)
-                        booking_results[opening.date] = result
-                        if result.success:
+                        if _in_auto_book_window(opening):
                             console.print(
-                                f"  [bold green]CART: {opening.river_name} {opening.date} — "
-                                f"{result.message}[/bold green]"
+                                f"[cyan]Auto-booking {opening.river_name} {opening.date}...[/cyan]"
                             )
+                            result = _attempt_auto_book(settings, opening)
+                            booking_results[opening.date] = result
+                            if result.success:
+                                console.print(
+                                    f"  [bold green]CART: {opening.river_name} {opening.date} — "
+                                    f"{result.message}[/bold green]"
+                                )
+                            else:
+                                console.print(
+                                    f"  [yellow]BOOKING FAILED: {opening.river_name} {opening.date} — "
+                                    f"{result.message}[/yellow]"
+                                )
                         else:
                             console.print(
-                                f"  [yellow]BOOKING FAILED: {opening.river_name} {opening.date} — "
-                                f"{result.message}[/yellow]"
+                                f"  [dim]Skipping auto-book for {opening.river_name} {opening.date} "
+                                f"(outside target window — email only)[/dim]"
                             )
-                else:
-                    console.print("[dim]Auto-booking disabled (set AUTO_BOOK=true to enable)[/dim]")
 
                 notifier.notify(changes, booking_results=booking_results)
             else:
