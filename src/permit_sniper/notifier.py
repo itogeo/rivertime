@@ -213,22 +213,8 @@ class EmailNotifier:
         if not text_body:
             return False
 
-        count = len(changes)
-        rivers = set(c.river_name for c in changes)
-        any_in_cart = any(r.success for r in booking_results.values())
-        subject = (
-            f"🚨 PERMIT IN CART — Complete Checkout NOW: {', '.join(rivers)}"
-            if any_in_cart
-            else f"Permit Alert: {count} new opening(s) on {', '.join(rivers)}"
-        )
-
-        msg = MIMEMultipart("alternative")
-        msg["Subject"] = subject
-        msg["From"] = self.settings.email_from or self.settings.smtp_username
-        msg["To"] = ", ".join(self.settings.email_to_list)
-
-        msg.attach(MIMEText(text_body, "plain"))
-        msg.attach(MIMEText(html_body, "html"))
+        from_addr = self.settings.email_from or self.settings.smtp_username
+        success = True
 
         try:
             with smtplib.SMTP(self.settings.smtp_host, self.settings.smtp_port) as server:
@@ -236,16 +222,40 @@ class EmailNotifier:
                 server.starttls()
                 server.ehlo()
                 server.login(self.settings.smtp_username, self.settings.smtp_password)
-                server.sendmail(
-                    msg["From"],
-                    self.settings.email_to_list,
-                    msg.as_string(),
-                )
-            logger.info(f"Email sent to {', '.join(self.settings.email_to_list)}")
-            return True
+
+                # Send one email per change so the subject shows river + date
+                for c in changes:
+                    date_obj = datetime.strptime(c.date, "%Y-%m-%d")
+                    date_fmt = date_obj.strftime("%a %b %d, %Y")
+                    result = booking_results.get(c.date)
+                    any_in_cart = result and result.success
+
+                    subject = (
+                        f"🚨 IN CART — {c.river_name} {date_fmt}"
+                        if any_in_cart
+                        else f"{c.river_name} — {date_fmt} — {c.remaining} spot(s) open"
+                    )
+
+                    single_text = format_alert_text([c])
+                    single_html = format_alert_html(
+                        [c], booking_results={c.date: result} if result else {}
+                    )
+
+                    msg = MIMEMultipart("alternative")
+                    msg["Subject"] = subject
+                    msg["From"] = from_addr
+                    msg["To"] = ", ".join(self.settings.email_to_list)
+                    msg.attach(MIMEText(single_text, "plain"))
+                    msg.attach(MIMEText(single_html, "html"))
+
+                    server.sendmail(from_addr, self.settings.email_to_list, msg.as_string())
+                    logger.info(f"Email sent: {subject}")
+
         except Exception as e:
             logger.error(f"Failed to send email: {e}")
-            return False
+            success = False
+
+        return success
 
 
 class Notifier:

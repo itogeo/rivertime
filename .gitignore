@@ -13,3 +13,7 @@ data/state.json
 venv/
 .ruff_cache/
 .pytest_cache/
+
+# Worker (Cloudflare) build artifacts
+worker/node_modules/
+worker/dist/

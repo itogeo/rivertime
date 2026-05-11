@@ -1,0 +1,19 @@
+name = "permit-sniper"
+main = "src/index.ts"
+compatibility_date = "2024-12-01"
+
+# Run every 2 minutes — Cloudflare honors this exactly, unlike GitHub Actions
+[triggers]
+crons = ["*/2 * * * *"]
+
+# KV namespace for persisting availability state between runs
+[[kv_namespaces]]
+binding = "STATE"
+id = "790fd0e3669c4cc2ba9dea6f595f1a05"
+
+[vars]
+RIVERS = "middle_fork,main_salmon,selway"
+EMAIL_TO = "ianlrvd@gmail.com,itogeospatial@gmail.com,Frenchthomas6@gmail.com"
+# Set secrets via: wrangler secret put TWILIO_ACCOUNT_SID, etc.
+# Required for SMS: TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_FROM, TWILIO_TO
+# Required for email: RESEND_API_KEY, EMAIL_FROM
