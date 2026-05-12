@@ -2,9 +2,9 @@ name = "permit-sniper"
 main = "src/index.ts"
 compatibility_date = "2024-12-01"
 
-# Run every 2 minutes — Cloudflare honors this exactly, unlike GitHub Actions
+# Run every 1 minute — Cloudflare's minimum interval
 [triggers]
-crons = ["*/2 * * * *"]
+crons = ["* * * * *"]
 
 # KV namespace for persisting availability state between runs
 [[kv_namespaces]]
