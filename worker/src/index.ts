@@ -374,6 +374,7 @@ async function sendResendEmail(env: Env, changes: AvailabilityChange[]): Promise
     });
     const subject = `${c.riverName} — ${dateFmt} — ${c.remaining} spot(s) open`;
     const html = formatEmailHtml([c]);
+    const text = `PERMIT ALERT: ${c.riverName}\n${dateFmt} — ${c.remaining} spot(s) open\nhttps://www.recreation.gov/permits/${c.permitId}`;
 
     try {
       const resp = await fetch("https://api.resend.com/emails", {
@@ -387,6 +388,7 @@ async function sendResendEmail(env: Env, changes: AvailabilityChange[]): Promise
           to: recipients,
           subject,
           html,
+          text,
         }),
       });
 
