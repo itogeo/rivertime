@@ -2,9 +2,25 @@ name = "permit-sniper"
 main = "src/index.ts"
 compatibility_date = "2024-12-01"
 
-# Run every 1 minute — Cloudflare's minimum interval
-[triggers]
-crons = ["* * * * *"]
+# STOPPED 2026-09-22. The cron trigger was removed from the deployed Worker and this
+# config was changed to match, because otherwise the next `wrangler deploy` would put
+# the every-minute schedule straight back.
+#
+# Why: measured over 24 h, this Worker ran 1,418 times and 525 of those were KILLED with
+# `exceededResources` at exactly the 10 ms free-tier CPU cap; the runs that survived
+# averaged ~21 ms. So it was both generating Cloudflare's CPU-limit emails for the whole
+# account AND silently failing roughly one availability check in three. Each run fetches
+# three rivers, JSON-parses the availability payload and diffs division x date against KV
+# — too much work for one free-tier invocation.
+#
+# A Worker with no triggers costs nothing and stays deployed, so the `fetch` handler still
+# answers /check by hand. To bring it back, fix the cost first — something like:
+#     [triggers]
+#     crons = ["*/5 * * * *"]      # 288 runs/day instead of 1,440
+# and split RIVERS across runs so each invocation parses ONE payload, not three.
+#
+# [triggers]
+# crons = ["* * * * *"]
 
 # KV namespace for persisting availability state between runs
 [[kv_namespaces]]
