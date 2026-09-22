@@ -2,9 +2,12 @@ name = "permit-sniper"
 main = "src/index.ts"
 compatibility_date = "2024-12-01"
 
-# STOPPED 2026-09-22. The cron trigger was removed from the deployed Worker and this
-# config was changed to match, because otherwise the next `wrangler deploy` would put
-# the every-minute schedule straight back.
+# MOTHBALLED 2026-09-22 until spring 2027. The cron trigger was removed from the deployed
+# Worker and this config was changed to match, because otherwise the next
+# `wrangler deploy` would put the every-minute schedule straight back.
+#
+# This is a seasonal tool — river permit cancellations only matter in the float season —
+# and it is deliberately dormant, not abandoned. Nothing was deleted.
 #
 # Why: measured over 24 h, this Worker ran 1,418 times and 525 of those were KILLED with
 # `exceededResources` at exactly the 10 ms free-tier CPU cap; the runs that survived

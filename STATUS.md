@@ -2,14 +2,20 @@
 
 **Last meaningful commit:** 2026-05-21 (worker last modified on Cloudflare) · 18 commits · remote `itogeo/rivertime` (note: folder is `permit-sniper`, repo is `rivertime`)
 
-> **STOPPED 2026-09-22 — the cron trigger was removed. It is not watching anything.**
+> **MOTHBALLED 2026-09-22 until spring 2027.** The cron trigger is removed and it is
+> watching nothing. Deliberately dormant for the off-season, not abandoned — the script,
+> its KV state and its secrets are all still in place. Bring it back for the 2027 float
+> season, but fix the cost first (see below) or it will fail the same way.
 
 ## What it was for
 Watch Recreation.gov for cancellations on three Idaho/Montana river permits — Middle Fork
 of the Salmon, Main Salmon, Selway — and alert by email and Twilio SMS the moment a date
 opens up. `EMAIL_TO` carries four addresses: Ian, itogeospatial, and two friends.
 
-## Why it was stopped
+## Why it was mothballed
+Two reasons, and the seasonal one is the smaller of them: it is the off-season, so nobody
+needs river cancellation alerts until spring. The real reason is that it was broken.
+
 Cloudflare Workers analytics, 24 h to 2026-09-22:
 
 | | |
